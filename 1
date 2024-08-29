@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Encender Led desde ESP32</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script>
+        function encApa(action) {
+            fetch('/' + action)
+                .then(response => response.text())
+                .then(data => console.log(data));
+        }
+    </script>
+</head>
+<body>
+    <div class="container text-center text-primary display-4">
+        Encender un LED con el servidor ESP32<br><br>
+        <input type="button" class="btn btn-success" value="Encender" onclick="encApa('on')">
+        <input type="button" class="btn btn-danger" value="Apagar" onclick="encApa('off')"><br><br>
+    </div>
+
+</body>
+</html>
+
+
+#include <WiFi.h>
+#include <WebServer.h>
+
+const char* ssid = "UPVM2.4";
+const char* password = "Wifiupvm";
+
+WebServer server(80);
+
+const int ledPin = 12; // Cambia esto al pin que estés usando para el LED
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(ledPin, OUTPUT);
+
+  // Conectar a la red WiFi
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("");
+  Serial.println("WiFi conectado.");
+  Serial.println("Dirección IP: ");
+  Serial.println(WiFi.localIP());
+
+  // Configurar las rutas del servidor
+  server.on("/on", []() {
+    digitalWrite(ledPin, HIGH);
+    server.send(200, "text/plain", "LED encendido");
+  });
+
+  server.on("/off", []() {
+    digitalWrite(ledPin, LOW);
+    server.send(200, "text/plain", "LED apagado");
+  });
+
+  server.begin();
+  Serial.println("Servidor HTTP iniciado");
+}
+
+void loop() {
+  server.handleClient();
+}
